@@ -2,14 +2,21 @@ import React from "react";
 import "./index.css";
 import axios from "axios";
 import { Link } from "react-router-dom";
+import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
+import "dayjs/locale/ko";
+import { API_URL } from "../config/constants";
+import { Carousel } from "antd";
+
+dayjs.extend(relativeTime);
+dayjs.locale("ko");
 
 function MainPage() {
   const [products, setProducts] = React.useState([]);
+  const [banners, setBanners] = React.useState([]);
   React.useEffect(function () {
     axios
-      .get(
-        "https://54ad73c7-016e-4b63-b760-801d385fbc3d.mock.pstmn.io/products"
-      )
+      .get(`${API_URL}/products`)
       .then(function (result) {
         console.log(result);
         const products = result.data.products;
@@ -18,14 +25,34 @@ function MainPage() {
       .catch(function (error) {
         console.log("에러내용 :", error);
       });
+
+    axios
+      .get(`${API_URL}/banners`)
+      .then((result) => {
+        console.log(result);
+        const banners = result.data.banners;
+        setBanners(banners);
+      })
+      .catch((error) => {
+        console.error("에러발생 : ", error);
+      });
   }, []);
 
   return (
     <div>
-      <div id="banner">
-        <img src="/images/banners/banner1.png" />
-      </div>
-      <h1>음식 종류</h1>
+      <Carousel autoplay autoplaySpeed={3000}>
+        {banners.map((banner, index) => {
+          return (
+            <Link to={banner.href}>
+              <div id="banner">
+                <img src={`${API_URL}/${banner.imageUrl}`} />
+              </div>
+            </Link>
+          );
+        })}
+      </Carousel>
+
+      <h1 id="product-headline">음식 종류</h1>
       <div id="product-list">
         {products.map(function (product, index) {
           return (
@@ -36,17 +63,25 @@ function MainPage() {
                 to={`/products/${product.id}`}
               >
                 <div>
-                  <img className="product-img" src={product.imageUrl} />
+                  <img
+                    className="product-img"
+                    src={`${API_URL}/${product.imageUrl}`}
+                  />
                 </div>
                 <div className="product-contents">
                   <span className="product-contents">{product.name}</span>
                   <span className="product-price">{product.price}원</span>
-                  <div className="product-seller">
-                    <img
-                      className="product-avatar"
-                      src="/images/icons/avatar.png"
-                    />
-                    <span>{product.seller}</span>
+                  <div className="product-footer">
+                    <div className="product-seller">
+                      <img
+                        className="product-avatar"
+                        src="/images/icons/avatar.png"
+                      />
+                      <span>{product.seller}</span>
+                    </div>
+                    <span className="product-date">
+                      {dayjs(product.createdAt).fromNow()}
+                    </span>
                   </div>
                 </div>
               </Link>
